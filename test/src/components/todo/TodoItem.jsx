@@ -1,53 +1,63 @@
-// import React from "react";
-// import { Checkbox } from "@/components/ui/checkbox";
-// import { Button } from "@/components/ui/button";
-
-// export default function TodoItem({ todo, toggleComplete, deleteTodo }) {
-//   return (
-//     <div className="flex justify-between items-center p-2 border rounded mb-2">
-//       <div className="flex items-center gap-2">
-//         <Checkbox
-//           checked={todo.completed}
-//           onCheckedChange={() => toggleComplete(todo._id)}
-//         />
-//         <span className={todo.completed ? "line-through text-gray-400" : ""}>
-//           {todo.text}
-//         </span>
-//       </div>
-//       <Button
-//         variant="destructive"
-//         size="sm"
-//         onClick={() => deleteTodo(todo._id)}
-//       >
-//         Delete
-//       </Button>
-//     </div>
-//   );
-// }
-
-import React from "react";
+import React, { memo, useCallback } from "react";
+import { TableCell, TableRow } from "@/components/ui/table";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
+import { Trash2 } from "lucide-react";
 
-export default function TodoItem({ todo, toggleComplete, deleteTodo }) {
+function formatDate(date) {
+  if (!date) return "-";
+  const d = new Date(date);
+  return d.toLocaleString(); // simple, locale-aware
+}
+
+function TodoItem({ todo, toggleComplete, deleteTodo }) {
+  // ✅ Memoize handlers so each row doesn’t recreate them on every render
+  const handleToggle = useCallback(
+    (checked) => {
+      toggleComplete(todo._id, !!checked);
+    },
+    [todo._id, toggleComplete]
+  );
+
+  const handleDelete = useCallback(() => {
+    deleteTodo(todo._id);
+  }, [todo._id, deleteTodo]);
+
   return (
-    <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg shadow-sm border border-gray-100 mb-3 hover:bg-gray-100 transition-all">
-      <div className="flex items-center gap-3">
+    <TableRow className="hover:bg-gray-50 transition-colors">
+      <TableCell className="text-center">
         <Checkbox
           checked={todo.completed}
-          onCheckedChange={() => toggleComplete(todo._id)}
+          onCheckedChange={handleToggle}
+          aria-label={`Mark "${todo.text}" as complete`}
         />
-        <span className={`text-gray-900 ${todo.completed ? "line-through text-gray-400" : ""}`}>
-          {todo.text}
-        </span>
-      </div>
-      <Button
-        variant="destructive"
-        size="sm"
-        onClick={() => deleteTodo(todo._id)}
+      </TableCell>
+
+      <TableCell
+        className={`text-gray-900 ${
+          todo.completed ? "line-through text-gray-400" : ""
+        }`}
       >
-        Delete
-      </Button>
-    </div>
+        {todo.text || "(Untitled)"}
+      </TableCell>
+
+      <TableCell>{formatDate(todo.createdAt)}</TableCell>
+
+      <TableCell className="text-center">
+        <Button
+          variant="destructive"
+          size="sm"
+          onClick={handleDelete}
+          aria-label={`Delete "${todo.text}"`}
+          className="flex items-center gap-1 mx-auto"
+        >
+          <Trash2 className="w-4 h-4" />
+          Delete
+        </Button>
+      </TableCell>
+    </TableRow>
   );
 }
+
+// 🧠 memo() prevents re-render if props don’t change
+export default memo(TodoItem);
